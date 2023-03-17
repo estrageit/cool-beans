@@ -1,8 +1,8 @@
 CFLAGS = -O2
-LDFLAGS = -lcglm -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+LDFLAGS = -lcglm `pkg-config --static --libs glfw3` -lvulkan
 
-bean: main.c
-	gcc $(CFLAGS) -o bean main.c $(LDFLAGS)
+bean: *.c
+	gcc $(CFLAGS) -o bean *.c $(LDFLAGS)
 
 .PHONY: test clean
 

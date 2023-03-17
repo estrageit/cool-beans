@@ -1,6 +1,9 @@
 #include "lve_window.h"
 
-#include<string.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <stdio.h>
 
 void lvewin_init(lve_window* lvewin){
     glfwInit();
@@ -30,4 +33,8 @@ void lvewin_destroy(lve_window* lvewin){
     glfwTerminate();
     free(lvewin->m_name);
     free(lvewin);
+}
+
+int lvewin_shouldclose(lve_window* lvewin) { 
+    return glfwWindowShouldClose(lvewin->m_window); 
 }
