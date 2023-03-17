@@ -35,6 +35,6 @@ void lvewin_destroy(lve_window* lvewin){
     free(lvewin);
 }
 
-int lvewin_shouldclose(lve_window* lvewin) { 
+uint8_t lvewin_shouldclose(lve_window* lvewin) { 
     return glfwWindowShouldClose(lvewin->m_window); 
 }

@@ -5,6 +5,9 @@
 lve_first_app* lvefirapp_make(){
     lve_first_app* r = malloc(sizeof(lve_first_app));
     r->m_window = lvewin_make(W_WIDTH, W_HEIGHT, "COOL!");
+    r->m_pipeline = lvepili_make(
+        "shaders/simple_shader.vert.spv",
+        "shaders/simple_shader.frag.spv");
     return r;
 }
 

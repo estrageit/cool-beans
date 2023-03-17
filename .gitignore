@@ -2,3 +2,4 @@ bean
 include/
 lib/
 .vscode/
+shaders/*.spv
