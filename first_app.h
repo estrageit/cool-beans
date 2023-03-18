@@ -2,6 +2,7 @@
 
 #include "lve_window.h"
 #include "lve_pipeline.h"
+#include "lve_device.h"
 
 #define W_WIDTH 800
 #define W_HEIGHT 600
@@ -9,6 +10,7 @@
 typedef struct lve_first_app {
     lve_window* m_window;
     lve_pipeline* m_pipeline;
+    lve_device* m_device;
 } lve_first_app;
 
 void lvefirapp_run(lve_first_app* lvefirapp);

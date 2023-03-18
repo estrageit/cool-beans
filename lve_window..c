@@ -38,3 +38,13 @@ void lvewin_destroy(lve_window* lvewin){
 uint8_t lvewin_shouldclose(lve_window* lvewin) { 
     return glfwWindowShouldClose(lvewin->m_window); 
 }
+
+void lvewin_create_window_surface(
+    lve_window* lvewin,
+    VkInstance instance,
+    VkSurfaceKHR* surface)
+{
+    if(glfwCreateWindowSurface(
+        instance, lvewin->m_window, NULL, surface) != VK_SUCCESS)
+        printf("[ERROR] glfwCreateWindowSurface failed!");
+}

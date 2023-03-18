@@ -15,3 +15,7 @@ typedef struct lve_window{
 lve_window* lvewin_make(int w, int h, const char* name);
 void lvewin_destroy(lve_window* lvewin);
 uint8_t lvewin_shouldclose(lve_window* lvewin);
+void lvewin_create_window_surface(
+    lve_window* lvewin,
+    VkInstance instance,
+    VkSurfaceKHR* surface);
