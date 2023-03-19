@@ -46,5 +46,5 @@ void lvewin_create_window_surface(
 {
     if(glfwCreateWindowSurface(
         instance, lvewin->m_window, NULL, surface) != VK_SUCCESS)
-        printf("[ERROR] glfwCreateWindowSurface failed!");
+        printf("\033[0;31m[ERROR]\033[0m glfwCreateWindowSurface failed!");
 }

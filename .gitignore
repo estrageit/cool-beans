@@ -3,3 +3,4 @@ include/
 lib/
 .vscode/
 shaders/*.spv
+c++/

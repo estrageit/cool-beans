@@ -1,4 +1,4 @@
-CFLAGS = -O2
+CFLAGS = -g -Wall
 LDFLAGS = -lcglm `pkg-config --static --libs glfw3` -lvulkan
 
 bean: *.c

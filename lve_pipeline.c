@@ -5,6 +5,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdint.h>
+#include <errno.h>
 
 typedef struct lvepili_shader_buf{
     int size;
@@ -15,26 +16,29 @@ typedef struct lvepili_shader_buf{
 lvepili_shader_buf* lvepili_read_file(const char* file_path){
     FILE *fp = fopen(file_path, "rb");
     if (fp == NULL) {
-        printf("[ERROR] Could not read file '%s'. ferror() returned the following: (%0x)\n", file_path, ferror(fp));
+        printf("\033[0;31m[ERROR]\033[0m Could not read file '%s'. ferror() returned the following: (%0x)\n", file_path, ferror(fp));
         return NULL;
     }
     fseek(fp, 0L, SEEK_END);
     int sz = ftell(fp);
     rewind(fp);
-    lvepili_shader_buf* r = malloc(sizeof(int) + sz);
+    lvepili_shader_buf* r = malloc(sizeof(int) + sz * sizeof(uint8_t));
     r->size = sz;
-    fgets(r->buf, sz, fp);
+    for(int i=0;i<sz-1;i++){
+        r->buf[i]=fgetc(fp);
+    }
     fclose(fp);
+
     return r;
 }
 
 void lvepili_create_shader_module(lve_pipeline* lvepili, const lvepili_shader_buf* code, VkShaderModule* shader_module){
-    VkShaderModuleCreateInfo create_info;
+    VkShaderModuleCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code->size; // could need a +1
-    create_info.pCode = (const uint32_t*)code->buf; // there's an incredibly high chance this doesnt work
+    create_info.pCode = (uint32_t*)code->buf; // there's an incredibly high chance this doesnt work
     if (vkCreateShaderModule(lvedev_device(lvepili->m_device), &create_info, NULL, shader_module) != VK_SUCCESS)
-        printf("[ERROR] lvepili_create_shader_module() failed!\n");
+        printf("\033[0;31m[ERROR]\033[0m lvepili_create_shader_module() failed!\n");
 }
 
 void lvepili_create_graphics_pipeline(
@@ -44,19 +48,19 @@ void lvepili_create_graphics_pipeline(
     const lve_pipeline_config_info* config_info)
 {
     assert(config_info->pipeline_layout != VK_NULL_HANDLE &&
-        "[ERROR] Cannot create graphics pipeline! no pipeline_layout provided in config_info\n");
-    assert(config_info->render_pass != VK_NULL_HANDLE && 
-        "[ERROR] Cannot create graphics pipeline! no render_pass provided in config_info\n");
+        "\033[0;31m[ERROR]\033[0m Cannot create graphics pipeline! no pipeline_layout provided in config_info\n");
+    assert(config_info->render_pass != VK_NULL_HANDLE &&
+        "\033[0;31m[ERROR]\033[0m Cannot create graphics pipeline! no render_pass provided in config_info\n");
 
     lvepili_shader_buf* vert_code = lvepili_read_file(vert_file_path);
     lvepili_shader_buf* frag_code = lvepili_read_file(frag_file_path);
-    printf("[INFO] Vert shader size: %d\n", vert_code->size);
-    printf("[INFO] Frag shader size: %d\n", frag_code->size);
+    printf("\033[0;34m[INFO]\033[0m Vert shader size: %d\n", vert_code->size);
+    printf("\033[0;34m[INFO]\033[0m Frag shader size: %d\n", frag_code->size);
 
     lvepili_create_shader_module(lvepili, vert_code, &lvepili->m_vert_shader_module);
     lvepili_create_shader_module(lvepili, frag_code, &lvepili->m_frag_shader_module);
 
-    VkPipelineShaderStageCreateInfo shader_stages[2];
+    VkPipelineShaderStageCreateInfo shader_stages[2] = {};
 
     shader_stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader_stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -74,14 +78,14 @@ void lvepili_create_graphics_pipeline(
     shader_stages[1].pNext = NULL;
     shader_stages[1].pSpecializationInfo = NULL;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_info;
+    VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexAttributeDescriptionCount = 0;
     vertex_input_info.vertexBindingDescriptionCount = 0;
     vertex_input_info.pVertexAttributeDescriptions = NULL;
     vertex_input_info.pVertexBindingDescriptions = NULL;
 
-    VkGraphicsPipelineCreateInfo pipeline_info;
+    VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = 2;
     pipeline_info.pStages = shader_stages;
@@ -101,6 +105,10 @@ void lvepili_create_graphics_pipeline(
     pipeline_info.basePipelineIndex = -1;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
+    //this generates a warning in the frag shader that says theres no
+    //matching output for the fragment shader (location 0).
+    //this may be because of the lack of a swap chain, but otherwise
+    //it's caused due to misconfiguration of lve_device
     if(vkCreateGraphicsPipelines(
         lvedev_device(lvepili->m_device),
         VK_NULL_HANDLE,
@@ -108,7 +116,7 @@ void lvepili_create_graphics_pipeline(
         &pipeline_info,
         NULL,
         &lvepili->m_graphics_pipeline) != VK_SUCCESS)
-        printf("[ERROR] vkCreateGraphicsPipelines() failed!(good luck fixing this lmao)\n");
+        printf("\033[0;31m[ERROR]\033[0m vkCreateGraphicsPipelines() failed!(good luck fixing this lmao)\n");
 
     free(vert_code);
     free(frag_code);
@@ -121,11 +129,12 @@ lve_pipeline* lvepili_make(
     const lve_pipeline_config_info* config_info)
 {
     lve_pipeline* r = malloc(sizeof(lve_pipeline));
+    memset(r, 0, sizeof(lve_pipeline));
 
     r->m_device = device;
 
     lvepili_create_graphics_pipeline(r, vert_file_path, frag_file_path, config_info);
-    
+
     return r;
 }
 
@@ -149,6 +158,7 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     uint32_t width, uint32_t height)
 {
     lve_pipeline_config_info* r = malloc(sizeof(lve_pipeline_config_info));
+    memset(r, 0, sizeof(lve_pipeline_config_info));
 
     r->input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     r->input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -163,13 +173,13 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
 
     r->scissor.offset = (VkOffset2D){0, 0};
     r->scissor.extent = (VkExtent2D){width, height};
-    
+
     r->viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     r->viewport_info.viewportCount = 1;
     r->viewport_info.pViewports = &r->viewport;
     r->viewport_info.scissorCount = 1;
     r->viewport_info.pScissors = &r->scissor;
-    
+
     r->rasterization_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     r->rasterization_info.depthClampEnable = VK_FALSE;
     r->rasterization_info.rasterizerDiscardEnable = VK_FALSE;
@@ -181,7 +191,7 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     r->rasterization_info.depthBiasConstantFactor = 0.0f;  // Optional
     r->rasterization_info.depthBiasClamp = 0.0f;           // Optional
     r->rasterization_info.depthBiasSlopeFactor = 0.0f;     // Optional
-    
+
     r->multisample_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     r->multisample_info.sampleShadingEnable = VK_FALSE;
     r->multisample_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -189,7 +199,7 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     r->multisample_info.pSampleMask = NULL;             // Optional
     r->multisample_info.alphaToCoverageEnable = VK_FALSE;  // Optional
     r->multisample_info.alphaToOneEnable = VK_FALSE;       // Optional
-    
+
     r->color_blend_attachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
         VK_COLOR_COMPONENT_A_BIT;
@@ -200,7 +210,7 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     r->color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
     r->color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
     r->color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
-    
+
     r->color_blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     r->color_blend_info.logicOpEnable = VK_FALSE;
     r->color_blend_info.logicOp = VK_LOGIC_OP_COPY;  // Optional
@@ -210,7 +220,7 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     r->color_blend_info.blendConstants[1] = 0.0f;  // Optional
     r->color_blend_info.blendConstants[2] = 0.0f;  // Optional
     r->color_blend_info.blendConstants[3] = 0.0f;  // Optional
-    
+
     r->depth_stencil_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     r->depth_stencil_info.depthTestEnable = VK_TRUE;
     r->depth_stencil_info.depthWriteEnable = VK_TRUE;
