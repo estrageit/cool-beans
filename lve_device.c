@@ -398,16 +398,46 @@ VkQueue lvedev_present_queue(lve_device* lvedev){return lvedev->m_present_queue;
 
 lve_swap_chain_support_details lvedev_get_swap_chain_support(lve_device* lvedev)
     {return lvedev_query_swap_chain_support(lvedev, lvedev->m_physical_device);}
+
 uint32_t lvedev_find_memory_type(
-    lve_device* lvedev, uint32_t type_filter, VkMemoryPropertyFlags properties);
+    lve_device* lvedev, uint32_t type_filter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(lvedev->m_physical_device, &memProperties);
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((type_filter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+        return i;
+        }
+    }
+    printf("\033[0;31m[ERROR]\033[0m Failed to find suitable memory type!\n");
+    exit(-1);
+}
 
 lve_queue_family_indices lvedev_find_physical_queue_families(lve_device* lvedev)
     {return lvedev_find_queue_families(lvedev, lvedev->m_physical_device);}
+
 VkFormat lvedev_find_supported_format(
     lve_device* lvedev,
+    int candidates_count,
     const VkFormat* candidates,
     VkImageTiling tiling,
-    VkFormatFeatureFlags features);
+    VkFormatFeatureFlags features)
+{
+    for(int i=0;i<candidates_count;i++){
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(lvedev->m_physical_device, candidates[i], &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+        return candidates[i];
+        } else if (
+            tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+        return candidates[i];
+        }
+    }
+    printf("\033[0;31m[ERROR]\033[0m Failed to find supported format!\n");
+    exit(-1);
+}
 
 void lvedev_create_buffer(
     lve_device* lvedev,
@@ -415,30 +445,127 @@ void lvedev_create_buffer(
     VkBufferUsageFlags usage,
     VkMemoryPropertyFlags properties,
     VkBuffer* buffer,
-    VkDeviceMemory* buffer_memory);
-VkCommandBuffer lvedev_begin_single_time_commands(lve_device* lvedev);
+    VkDeviceMemory* buffer_memory)
+{
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (vkCreateBuffer(lvedev->m_device, &bufferInfo, NULL, buffer) != VK_SUCCESS) {
+        printf("\033[0;31m[ERROR]\033[0m Failed to create vertex buffer!\n");
+        exit(-1);
+    }
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(lvedev->m_device, *buffer, &memRequirements);
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = lvedev_find_memory_type(lvedev, memRequirements.memoryTypeBits, properties);
+    if (vkAllocateMemory(lvedev->m_device, &allocInfo, NULL, buffer_memory) != VK_SUCCESS) {
+        printf("\033[0;31m[ERROR]\033[0m Failed to allocate vertex buffer memory!\n");
+        exit(-1);
+    }
+    vkBindBufferMemory(lvedev->m_device, *buffer, *buffer_memory, 0);
+}
+
+VkCommandBuffer lvedev_begin_single_time_commands(lve_device* lvedev)
+{
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = lvedev->m_command_pool;
+    allocInfo.commandBufferCount = 1;
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(lvedev->m_device, &allocInfo, &commandBuffer);
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    return commandBuffer;
+}
+
 void lvedev_end_single_time_commands(
     lve_device* lvedev,
-    VkCommandBuffer command_buffer);
-void lvedev_end_single_time_commands(
-    lve_device* lvedev,
-    VkCommandBuffer command_buffer);
+    VkCommandBuffer command_buffer)
+{
+  vkEndCommandBuffer(command_buffer);
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &command_buffer;
+  vkQueueSubmit(lvedev->m_graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(lvedev->m_graphics_queue);
+  vkFreeCommandBuffers(lvedev->m_device, lvedev->m_command_pool, 1, &command_buffer);
+}
+
 void lvedev_copy_buffer(
     lve_device* lvedev,
     VkBuffer src_buffer,
     VkBuffer dst_buffer,
-    VkDeviceSize size);
+    VkDeviceSize size)
+{
+    VkCommandBuffer commandBuffer = lvedev_begin_single_time_commands(lvedev);
+    VkBufferCopy copyRegion = {};
+    copyRegion.srcOffset = 0;  // Optional
+    copyRegion.dstOffset = 0;  // Optional
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, src_buffer, dst_buffer, 1, &copyRegion);
+    lvedev_end_single_time_commands(lvedev, commandBuffer);
+}
+
 void lvedev_copy_buffer_to_image(
     lve_device* lvedev,
     VkBuffer buffer,
     VkImage image,
     uint32_t width,
     uint32_t height,
-    uint32_t layer_count);
+    uint32_t layer_count)
+{
+    VkCommandBuffer commandBuffer = lvedev_begin_single_time_commands(lvedev);
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = layer_count;
+    region.imageOffset = (VkOffset3D){0, 0, 0};
+    region.imageExtent = (VkExtent3D){width, height, 1};
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region);
+    lvedev_end_single_time_commands(lvedev, commandBuffer);
+}
 
 void lvedev_create_image_with_info(
     lve_device* lvedev,
-    const VkImageCreateInfo* imageInfo,
+    const VkImageCreateInfo* image_info,
     VkMemoryPropertyFlags properties,
     VkImage* image,
-    VkDeviceMemory* imageMemory);
+    VkDeviceMemory* image_memory)
+{
+    if (vkCreateImage(lvedev->m_device, image_info, NULL, image) != VK_SUCCESS) {
+        printf("\033[0;31m[ERROR]\033[0m Failed to create image!\n");
+        exit(-1);
+    }
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(lvedev->m_device, *image, &memRequirements);
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = lvedev_find_memory_type(lvedev, memRequirements.memoryTypeBits, properties);
+    if (vkAllocateMemory(lvedev->m_device, &allocInfo, NULL, image_memory) != VK_SUCCESS) {
+        printf("\033[0;31m[ERROR]\033[0m Failed to allocate image memory!\n");
+        exit(-1);
+    }
+    if (vkBindImageMemory(lvedev->m_device, *image, *image_memory, 0) != VK_SUCCESS) {
+        printf("\033[0;31m[ERROR]\033[0m Failed to bind image memory!\n");
+        exit(-1);
+    }
+}

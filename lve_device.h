@@ -65,6 +65,7 @@ uint32_t lvedev_find_memory_type(
 lve_queue_family_indices lvedev_find_physical_queue_families(lve_device* lvedev);
 VkFormat lvedev_find_supported_format(
     lve_device* lvedev,
+    int candidates_count,
     const VkFormat* candidates,
     VkImageTiling tiling,
     VkFormatFeatureFlags features);
@@ -98,7 +99,7 @@ void lvedev_copy_buffer_to_image(
 
 void lvedev_create_image_with_info(
     lve_device* lvedev,
-    const VkImageCreateInfo* imageInfo,
+    const VkImageCreateInfo* image_info,
     VkMemoryPropertyFlags properties,
     VkImage* image,
-    VkDeviceMemory* imageMemory);
+    VkDeviceMemory* image_memory);
