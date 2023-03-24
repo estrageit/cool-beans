@@ -35,8 +35,8 @@ void lvewin_destroy(lve_window* lvewin){
     free(lvewin);
 }
 
-uint8_t lvewin_shouldclose(lve_window* lvewin) { 
-    return glfwWindowShouldClose(lvewin->m_window); 
+uint8_t lvewin_shouldclose(lve_window* lvewin) {
+    return glfwWindowShouldClose(lvewin->m_window);
 }
 
 void lvewin_create_window_surface(
@@ -48,3 +48,6 @@ void lvewin_create_window_surface(
         instance, lvewin->m_window, NULL, surface) != VK_SUCCESS)
         printf("\033[0;31m[ERROR]\033[0m glfwCreateWindowSurface failed!");
 }
+
+VkExtent2D lvewin_get_extent(lve_window* lvewin)
+    {return (VkExtent2D){lvewin->m_width, lvewin->m_height};}

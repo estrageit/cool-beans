@@ -1,10 +1,10 @@
 #include "first_app.h"
 
 int main(){
-    lve_first_app* app = lvefirapp_make();
+    first_app* app = firapp_make();
+ 
+    firapp_run(app);
 
-    lvefirapp_run(app);
-
-    lvefirapp_destroy(app);
+    firapp_destroy(app);
     //theres no try/catch in c :(
 }

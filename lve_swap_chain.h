@@ -44,26 +44,16 @@ typedef struct lve_swap_chain{
 lve_swap_chain* lveswch_make(lve_device* device, VkExtent2D extent);
 void lveswch_destroy(lve_swap_chain* lveswch);
 
-VkFramebuffer lveswch_get_framebuffer(lve_swap_chain* lveswch, int index)
-    {return lveswch->m_swap_chain_framebuffers[index];}
-VkRenderPass lveswch_get_render_pass(lve_swap_chain* lveswch)
-    {return lveswch->m_render_pass;}
-VkImageView lveswch_get_image_view(lve_swap_chain* lveswch, int index)
-    {return lveswch->m_depth_image_views[index];}
-uint64_t lveswch_image_count(lve_swap_chain* lveswch)
-    {return lveswch->m_swap_chain_images_c;}
-VkFormat lveswch_get_swap_chain_image_format(lve_swap_chain* lveswch)
-    {return lveswch->m_swap_chain_image_format;}
-VkExtent2D lveswch_get_swap_chain_extent(lve_swap_chain* lveswch)
-    {return lveswch->m_swap_chain_extent;}
-uint32_t lveswch_width(lve_swap_chain* lveswch)
-    {return lveswch->m_swap_chain_extent.width;}
-uint32_t lveswch_height(lve_swap_chain* lveswch)
-    {return lveswch->m_swap_chain_extent.height;}
+VkFramebuffer lveswch_get_framebuffer(lve_swap_chain* lveswch, int index);
+VkRenderPass lveswch_get_render_pass(lve_swap_chain* lveswch);
+VkImageView lveswch_get_image_view(lve_swap_chain* lveswch, int index);
+uint64_t lveswch_image_count(lve_swap_chain* lveswch);
+VkFormat lveswch_get_swap_chain_image_format(lve_swap_chain* lveswch);
+VkExtent2D lveswch_get_swap_chain_extent(lve_swap_chain* lveswch);
+uint32_t lveswch_width(lve_swap_chain* lveswch);
+uint32_t lveswch_height(lve_swap_chain* lveswch);
 
-float lveswch_extent_aspect_ratio(lve_swap_chain* lveswch)
-    {return ((float)lveswch->m_swap_chain_extent.width)
-    / ((float)lveswch->m_swap_chain_extent.height);}
+float lveswch_extent_aspect_ratio(lve_swap_chain* lveswch);
 
 VkFormat lveswch_find_depth_format(lve_swap_chain* lveswch);
 

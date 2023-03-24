@@ -6,8 +6,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <errno.h>
-
-typedef struct lvepili_shader_buf{
+ 
+typedef struct lvepili_shader_buf{ 
     int size;
     uint8_t buf[];
 } lvepili_shader_buf;
@@ -16,7 +16,7 @@ typedef struct lvepili_shader_buf{
 lvepili_shader_buf* lvepili_read_file(const char* file_path){
     FILE *fp = fopen(file_path, "rb");
     if (fp == NULL) {
-        printf("\033[0;31m[ERROR]\033[0m Could not read file '%s'. ferror() returned the following: (%0x)\n", file_path, ferror(fp));
+        printf("\033[0;31m[ERROR]\033[0m Could not read file '%s'\n", file_path);
         return NULL;
     }
     fseek(fp, 0L, SEEK_END);
@@ -30,6 +30,10 @@ lvepili_shader_buf* lvepili_read_file(const char* file_path){
     fclose(fp);
 
     return r;
+}
+
+void lvepili_bind(lve_pipeline* lvepili, VkCommandBuffer command_buffer){
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lvepili->m_graphics_pipeline);
 }
 
 void lvepili_create_shader_module(lve_pipeline* lvepili, const lvepili_shader_buf* code, VkShaderModule* shader_module){
@@ -85,13 +89,20 @@ void lvepili_create_graphics_pipeline(
     vertex_input_info.pVertexAttributeDescriptions = NULL;
     vertex_input_info.pVertexBindingDescriptions = NULL;
 
+    VkPipelineViewportStateCreateInfo viewport_info = {};
+    viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_info.viewportCount = 1;
+    viewport_info.pViewports = &config_info->viewport;
+    viewport_info.scissorCount = 1;
+    viewport_info.pScissors = &config_info->scissor;
+
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = 2;
     pipeline_info.pStages = shader_stages;
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &config_info->input_assembly_info;
-    pipeline_info.pViewportState = &config_info->viewport_info;
+    pipeline_info.pViewportState = &viewport_info;
     pipeline_info.pMultisampleState = &config_info->multisample_info;
     pipeline_info.pRasterizationState = &config_info->rasterization_info;
     pipeline_info.pColorBlendState = &config_info->color_blend_info;
@@ -173,12 +184,6 @@ lve_pipeline_config_info* lvepili_default_pipeline_config_info(
 
     r->scissor.offset = (VkOffset2D){0, 0};
     r->scissor.extent = (VkExtent2D){width, height};
-
-    r->viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    r->viewport_info.viewportCount = 1;
-    r->viewport_info.pViewports = &r->viewport;
-    r->viewport_info.scissorCount = 1;
-    r->viewport_info.pScissors = &r->scissor;
 
     r->rasterization_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     r->rasterization_info.depthClampEnable = VK_FALSE;

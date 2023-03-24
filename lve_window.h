@@ -19,3 +19,4 @@ void lvewin_create_window_surface(
     lve_window* lvewin,
     VkInstance instance,
     VkSurfaceKHR* surface);
+VkExtent2D lvewin_get_extent(lve_window* lvewin);

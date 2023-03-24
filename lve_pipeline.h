@@ -6,7 +6,7 @@ typedef struct lve_pipeline_config_info{
     VkPipelineInputAssemblyStateCreateInfo input_assembly_info;
     VkViewport viewport;
     VkRect2D scissor;
-    VkPipelineViewportStateCreateInfo viewport_info;
+    //VkPipelineViewportStateCreateInfo viewport_info;
     VkPipelineRasterizationStateCreateInfo rasterization_info;
     VkPipelineMultisampleStateCreateInfo multisample_info;
     VkPipelineColorBlendAttachmentState color_blend_attachment;
@@ -34,3 +34,5 @@ void lvepili_destroy(lve_pipeline* lvepili);
 
 lve_pipeline_config_info* lvepili_default_pipeline_config_info(
     uint32_t width, uint32_t height);
+
+void lvepili_bind(lve_pipeline* lvepili, VkCommandBuffer command_buffer);

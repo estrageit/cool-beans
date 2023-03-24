@@ -1,8 +1,30 @@
-#include "lve_engine_swap_chain.h"
+#include "lve_swap_chain.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+//these could be inline
+VkFramebuffer lveswch_get_framebuffer(lve_swap_chain* lveswch, int index)
+    {return lveswch->m_swap_chain_framebuffers[index];}
+VkRenderPass lveswch_get_render_pass(lve_swap_chain* lveswch)
+    {return lveswch->m_render_pass;}
+VkImageView lveswch_get_image_view(lve_swap_chain* lveswch, int index)
+    {return lveswch->m_depth_image_views[index];}
+uint64_t lveswch_image_count(lve_swap_chain* lveswch)
+    {return lveswch->m_swap_chain_images_c;}
+VkFormat lveswch_get_swap_chain_image_format(lve_swap_chain* lveswch)
+    {return lveswch->m_swap_chain_image_format;}
+VkExtent2D lveswch_get_swap_chain_extent(lve_swap_chain* lveswch)
+    {return lveswch->m_swap_chain_extent;}
+uint32_t lveswch_width(lve_swap_chain* lveswch)
+    {return lveswch->m_swap_chain_extent.width;}
+uint32_t lveswch_height(lve_swap_chain* lveswch)
+    {return lveswch->m_swap_chain_extent.height;}
+
+float lveswch_extent_aspect_ratio(lve_swap_chain* lveswch)
+    {return ((float)lveswch->m_swap_chain_extent.width)
+    / ((float)lveswch->m_swap_chain_extent.height);}
 
 VkSurfaceFormatKHR lveswch_choose_swap_surface_format(uint32_t available_formats_c,
       const VkSurfaceFormatKHR* available_formats)
@@ -36,15 +58,11 @@ VkPresentModeKHR lveswch_choose_swap_present_mode(uint32_t available_present_mod
 }
 
 uint32_t max(uint32_t a, uint32_t b){
-    if (a > b)
-        return a;
-    return b;
+    return ((a > b) * a) + ((a <= b) * b);
 }
 
 uint32_t min(uint32_t a, uint32_t b){
-    if (a > b)
-        return b;
-    return a;
+    return ((a > b) * b) + ((a <= b) * a);
 }
 
 VkExtent2D lveswch_choose_swap_extent
@@ -192,7 +210,7 @@ void lveswch_create_depth_resources(lve_swap_chain* lveswch){
 
 void lveswch_create_render_pass(lve_swap_chain* lveswch){
     VkAttachmentDescription depthAttachment = {};
-    depthAttachment.format = lveswch_get_swap_chain_image_format(lveswch);
+    depthAttachment.format = lveswch_find_depth_format(lveswch);
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
