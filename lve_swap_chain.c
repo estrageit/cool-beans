@@ -30,7 +30,7 @@ VkSurfaceFormatKHR lveswch_choose_swap_surface_format(uint32_t available_formats
       const VkSurfaceFormatKHR* available_formats)
 {
     for (int i=0;i<available_formats_c;i++) {
-        if (available_formats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+        if (available_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
             available_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return available_formats[i];
         }
