@@ -29,6 +29,7 @@ typedef struct lve_swap_chain{
     VkExtent2D m_window_extent;
 
     VkSwapchainKHR m_swap_chain;
+    struct lve_swap_chain* old_swap_chain;
 
     VkSemaphore* m_image_available_semaphores;
     uint32_t m_image_available_semaphores_c;
@@ -42,6 +43,8 @@ typedef struct lve_swap_chain{
 } lve_swap_chain;
 
 lve_swap_chain* lveswch_make(lve_device* device, VkExtent2D extent);
+lve_swap_chain* lveswch_make_from_previous(lve_device* device, VkExtent2D extent, lve_swap_chain* previous);
+
 void lveswch_destroy(lve_swap_chain* lveswch);
 
 VkFramebuffer lveswch_get_framebuffer(lve_swap_chain* lveswch, int index);

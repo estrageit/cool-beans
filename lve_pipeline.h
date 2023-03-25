@@ -4,14 +4,16 @@
 
 typedef struct lve_pipeline_config_info{
     VkPipelineInputAssemblyStateCreateInfo input_assembly_info;
-    VkViewport viewport;
-    VkRect2D scissor;
-    //VkPipelineViewportStateCreateInfo viewport_info;
+
+    VkPipelineViewportStateCreateInfo viewport_info;
     VkPipelineRasterizationStateCreateInfo rasterization_info;
     VkPipelineMultisampleStateCreateInfo multisample_info;
     VkPipelineColorBlendAttachmentState color_blend_attachment;
     VkPipelineColorBlendStateCreateInfo color_blend_info;
     VkPipelineDepthStencilStateCreateInfo depth_stencil_info;
+    VkDynamicState dynamic_state_enables[2];
+    uint32_t dynamic_state_enables_c;
+    VkPipelineDynamicStateCreateInfo dynamic_state_info;
     VkPipelineLayout pipeline_layout;
     VkRenderPass render_pass;
     uint32_t subpass;
@@ -32,7 +34,6 @@ lve_pipeline* lvepili_make(
 
 void lvepili_destroy(lve_pipeline* lvepili);
 
-lve_pipeline_config_info* lvepili_default_pipeline_config_info(
-    uint32_t width, uint32_t height);
+void lvepili_default_pipeline_config_info(lve_pipeline_config_info* config_info);
 
 void lvepili_bind(lve_pipeline* lvepili, VkCommandBuffer command_buffer);

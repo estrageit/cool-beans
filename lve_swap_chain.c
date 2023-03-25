@@ -116,7 +116,7 @@ void lveswch_create_swap_chain(lve_swap_chain* lveswch){
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     createInfo.presentMode = presentMode;
     createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    createInfo.oldSwapchain = lveswch->old_swap_chain == NULL ? VK_NULL_HANDLE : lveswch->old_swap_chain->m_swap_chain;
     if (vkCreateSwapchainKHR(lvedev_device(lveswch->m_device), &createInfo, NULL, &lveswch->m_swap_chain) != VK_SUCCESS) {
         printf("\033[0;31m[ERROR]\033[0m Failed to create swap chain!\n");
         exit(-1);
@@ -386,17 +386,35 @@ VkResult lveswch_submit_command_buffers
     return result;
 }
 
+void lveswch_init(lve_swap_chain* lveswch){
+    lveswch_create_swap_chain(lveswch);
+    lveswch_create_image_views(lveswch);
+    lveswch_create_depth_resources(lveswch);
+    lveswch_create_render_pass(lveswch);
+    lveswch_create_framebuffers(lveswch);
+    lveswch_create_sync_objects(lveswch);
+}
+
+lve_swap_chain* lveswch_make_from_previous(lve_device* device, VkExtent2D extent, lve_swap_chain* previous){
+    lve_swap_chain* r = malloc(sizeof(lve_swap_chain));
+    memset(r, 0, sizeof(lve_swap_chain));
+    r->m_device = device;
+    r->m_window_extent = extent;
+    r->old_swap_chain = previous;
+
+    lveswch_init(r);
+
+    lveswch_destroy(r->old_swap_chain);
+    r->old_swap_chain = NULL;
+    return r;
+}
+
 lve_swap_chain* lveswch_make(lve_device* device_ptr, VkExtent2D extent){
     lve_swap_chain* r = malloc(sizeof(lve_swap_chain));
     memset(r, 0, sizeof(lve_swap_chain));
     r->m_device = device_ptr;
     r->m_window_extent = extent;
-    lveswch_create_swap_chain(r);
-    lveswch_create_image_views(r);
-    lveswch_create_depth_resources(r);
-    lveswch_create_render_pass(r);
-    lveswch_create_framebuffers(r);
-    lveswch_create_sync_objects(r);
+    lveswch_init(r);
     return r;
 }
 
