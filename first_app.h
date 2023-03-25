@@ -4,6 +4,7 @@
 #include "lve_pipeline.h"
 #include "lve_device.h"
 #include "lve_swap_chain.h"
+#include "lve_model.h"
 
 #define W_WIDTH 800
 #define W_HEIGHT 600
@@ -16,6 +17,7 @@ typedef struct first_app {
     VkPipelineLayout m_pipeline_layout;
     VkCommandBuffer* m_command_buffers;
     uint32_t m_command_buffers_c;
+    lve_model* m_model;// supposed to be a unique pointer
 } first_app;
 
 void firapp_run(first_app* lvefirapp);

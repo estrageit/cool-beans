@@ -4,6 +4,15 @@
 #include <stdio.h>
 #include <string.h>
 
+void firapp_load_models(first_app* firapp){
+    lve_vertex vertices[] = {
+        {{ 0.5f,  0.5f}, {1, 1, 0}},
+        {{ 0.5f, -0.5f}, {1, 0, 1}},
+        {{-0.5f, -0.5f}, {0, 1, 1}}
+    };
+    firapp->m_model = lvemdl_make(firapp->m_device, vertices, sizeof(vertices) / sizeof(lve_vertex));
+}
+
 void firapp_create_pipeline_layout(first_app* firapp){
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -30,6 +39,7 @@ void firapp_create_pipeline(first_app* firapp){
         "shaders/simple_shader.vert.spv",
         "shaders/simple_shader.frag.spv",
         pipeline_config);
+    free(pipeline_config);
 }
 
 void firapp_create_command_buffers(first_app* firapp){
@@ -71,7 +81,9 @@ void firapp_create_command_buffers(first_app* firapp){
         vkCmdBeginRenderPass(firapp->m_command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
         lvepili_bind(firapp->m_pipeline, firapp->m_command_buffers[i]);
-        vkCmdDraw(firapp->m_command_buffers[i], 3, 1, 0, 0);
+        //vkCmdDraw(firapp->m_command_buffers[i], 3, 1, 0, 0);
+        lvemdl_bind(firapp->m_model, firapp->m_command_buffers[i]);
+        lvemdl_draw(firapp->m_model, firapp->m_command_buffers[i]);
 
         vkCmdEndRenderPass(firapp->m_command_buffers[i]);
         if(vkEndCommandBuffer(firapp->m_command_buffers[i]) != VK_SUCCESS){
@@ -85,9 +97,11 @@ void firapp_draw_frame(first_app* firapp){
     uint32_t image_index;
     VkResult result = lveswch_acquire_next_image(firapp->m_swap_chain, &image_index);
 
+    //lvemdl_change_buf(firapp->m_model, 0, (lve_vertex){{0.5, 0.5 + glfwGetTime() / 100}});
+
     if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR){
         printf("\033[0;31m[ERROR]\033[0m Failed to acquire next swap chain image!\n");
-        exit(-1);
+        //exit(-1);
     }
 
     result = lveswch_submit_command_buffers(firapp->m_swap_chain, firapp->m_command_buffers + image_index, &image_index);
@@ -110,11 +124,7 @@ first_app* firapp_make(){
     r->m_window = lvewin_make(W_WIDTH, W_HEIGHT, "COOL!");
     r->m_device = lvedev_make(r->m_window);
     r->m_swap_chain = lveswch_make(r->m_device, lvewin_get_extent(r->m_window));
-    // r->m_pipeline = lvepili_make(
-    //     r->m_device,
-    //     "shaders/simple_shader.vert.spv",
-    //     "shaders/simple_shader.frag.spv",
-    //     lvepili_default_pipeline_config_info(W_WIDTH, W_HEIGHT));
+    firapp_load_models(r);
     firapp_create_pipeline_layout(r);
     firapp_create_pipeline(r);
     firapp_create_command_buffers(r);
@@ -122,6 +132,7 @@ first_app* firapp_make(){
 }
 
 void firapp_destroy(first_app* firapp){
+    lvemdl_destroy(firapp->m_model);
     vkDestroyPipelineLayout(lvedev_device(firapp->m_device), firapp->m_pipeline_layout, NULL);
     lvepili_destroy(firapp->m_pipeline);
     lveswch_destroy(firapp->m_swap_chain);

@@ -1,5 +1,7 @@
 #include "lve_pipeline.h"
 
+#include "lve_model.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,12 +84,18 @@ void lvepili_create_graphics_pipeline(
     shader_stages[1].pNext = NULL;
     shader_stages[1].pSpecializationInfo = NULL;
 
+    uint32_t binding_descriptions_c;
+    VkVertexInputBindingDescription* binding_descriptions = lvevtx_get_binding_descriptions(&binding_descriptions_c);
+
+    uint32_t attribute_descriptions_c;
+    VkVertexInputAttributeDescription* attribute_descriptions = lvevtx_get_attribute_descriptions(&attribute_descriptions_c);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_info.vertexBindingDescriptionCount = 0;
-    vertex_input_info.pVertexAttributeDescriptions = NULL;
-    vertex_input_info.pVertexBindingDescriptions = NULL;
+    vertex_input_info.vertexAttributeDescriptionCount = attribute_descriptions_c;
+    vertex_input_info.vertexBindingDescriptionCount = binding_descriptions_c;
+    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
+    vertex_input_info.pVertexBindingDescriptions = binding_descriptions;
 
     VkPipelineViewportStateCreateInfo viewport_info = {};
     viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
